@@ -1,26 +1,36 @@
 
 
-This package demonstrates several strategies for predicting postoperative risks from clinical notes, including 
-1. direct inference with a fine-tuned model
-2. semi-supervised approaches
-3. Our novel multi-task learning approach that allows a single model to predict multiple postoperative outcomes.
+## Overview
 
-It is designed for the American College of Surgeons (ACS) workshop
-*AI for Clinicians and Surgeons: A Hands-On Introduction Across the Care Continuum*.
+ClinicalPLAN (*Clinical **P**ostoperative Risk Prediction with **L**anguage Models **A**dapting to Clinical **N**otes*) is a Python package for predicting postoperative risks from clinical notes using language models. It provides flexible and clinically oriented workflows that support a range of perioperative use cases, enabling clinicians, researchers, and healthcare institutions to train and fine-tune models using preoperative or intraoperative clinical text.
+
+The package is designed to be accessible to a broad range of users, including clinicians, surgeons, and researchers with limited programming experience. It minimizes the need to interact with lower-level machine learning frameworks such as PyTorch. With just a few lines of high-level functions, users can begin training and fine-tuning their own models.
+
+ClinicalPLAN supports multiple modeling strategies, including:
+
+1. **Direct inference** with fine-tuned language models  
+2. **Semi-supervised learning** approaches for leveraging partially labeled data  
+3. A **multi-task learning framework** that enables simultaneous prediction of multiple postoperative outcomes  
+
+The package was developed for the American College of Surgeons (ACS) workshop, *AI for Clinicians and Surgeons: A Hands-On Introduction Across the Care Continuum*.
+
+The accompanying work is:  
+[*The foundational capabilities of large language models in predicting postoperative risks using clinical notes*](https://www.nature.com/articles/s41746-025-01489-2)  
+Alba, Xue, Abraham, Kannampallil, and Lu (2025), *npj Digital Medicine*
 
 ---
 
 ## Installation
 
 ```bash
-pip install demo-clinical-notes-risk-prediction
+pip install clinicalplan
 ```
 
 Because `torch` CUDA wheels aren't hosted on PyPI, install PyTorch first matching your GPU's CUDA version, then install this package. For example, on a machine with CUDA 11.8 drivers:
 
 ```bash
 pip install torch==2.1.2 --index-url https://download.pytorch.org/whl/cu118
-pip install demo-clinical-notes-risk-prediction
+pip install clinicalplan
 ```
 
 **Python version**: 3.9–3.11 (tested on 3.11).
@@ -133,13 +143,12 @@ get_postoperative_outcome_scores(
 
 **Parameters**
 
-| Name | Type | Default | Description |
-|---|---|---|---|
-| `model_name` | `str` | *required* | Path to a directory saved by `mtl_finetune`. |
-| `text` | `str \| list[str]` | *required* | One scenario string, or a list of them. Determines the shape of the return value. |
-| `outcomes` | `list[str] \| None` | `None` | Which outcomes to score. Defaults to all outcomes the model was trained on (recovered from `mtl_metadata.json`). Pass a subset to score only some. Names must match those used in `mtl_finetune`. |
-| `max_length` | `int \| None` | `None` | Token sequence length. Defaults to the value used during fine-tuning (recovered from metadata), else `512`. |
-| `device` | `str \| None` | `None` | `"cuda"`, `"cpu"`, or `None` to auto-detect. |
+- `model_name` (`str`, required): Path to a directory saved by `mtl_finetune`.
+- `text` (`str | list[str]`, required): One scenario string, or a list of them. Determines the shape of the return value.
+- `outcomes` (`list[str] | None`, default: `None`): Which outcomes to score. Defaults to all outcomes the model was trained on, recovered from `mtl_metadata.json`. Pass a subset to score only some. Names must match those used in `mtl_finetune`.
+- `max_length` (`int | None`, default: `None`): Token sequence length. Defaults to the value used during fine-tuning, recovered from metadata, otherwise `512`.
+- `device` (`str | None`, default: `None`): `"cuda"`, `"cpu"`, or `None` to auto-detect.
+
 
 **Returns**
 

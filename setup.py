@@ -4,14 +4,13 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="demo-clinical-notes-risk-prediction",                      # change if you already have a name in mind
+    name="clinicalplan",                      # change if you already have a name in mind
     version="0.1.0",
     description=(
-        "Package used to demonstrate the prediction of postoperative risks from clinical notes using"
-        "an array of strategies including: (1) directly infering our finetuned model, (2) semi-supervised approaches, "
-        "(3) our novel multi-task learning approach which allows users to predict multiple postoperative outcomes from a single model."
-        "Designed for easy demonstration in the American College of Surgeons (ACS) "
-        "AI for Clinicians and Surgeons: A Hands-On Introduction Across the Care Continuum workshop"
+        "ClinicalPLAN is a Python package for predicting postoperative risks from clinical notes using "
+        "language models. It provides training and inference workflows for fine-tuned models, "
+        "semi-supervised methods, and multi-task prediction of multiple clinical outcomes. "
+        "The package is intended for clinical research and educational use, notably for the American College of Surgeons."
     ),
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -62,7 +61,7 @@ setup(
         ],
     },
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 1 - Planning",
         "Intended Audience :: Healthcare Industry",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: Apache Software License",

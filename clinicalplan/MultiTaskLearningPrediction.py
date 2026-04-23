@@ -23,7 +23,8 @@ from transformers import (
     DataCollatorForLanguageModeling,
     TrainingArguments,
 )
-
+import numpy as np
+import pandas as pd
 from .model import CustomBioClinicalBertForCombinedLearning
 from .trainer import CustomTrainer
 
@@ -314,3 +315,186 @@ def get_postoperative_outcome_scores(
                 results_per_example[i][outcome_name] = p
 
     return results_per_example[0] if was_single else results_per_example
+
+
+
+
+
+def get_psuedo_data():
+    rng = np.random.default_rng(0)
+
+    # ---- building blocks ---------------------------------------------------------
+    # Each procedure carries risk flags so we can build outcomes from them.
+    # Flags: cardiac, thoracic, intracavitary (big abdominal/thoracic cases),
+    # emergent (acute presentation).
+    procedures = [
+        ("appendectomy", "laparoscopic", "acute appendicitis",
+         dict(cardiac=0, thoracic=0, intracavitary=1, emergent=1)),
+        ("coronary artery bypass graft", "three-vessel", "severe CAD with LAD stenosis",
+         dict(cardiac=1, thoracic=1, intracavitary=1, emergent=0)),
+        ("total knee arthroplasty", "right", "end-stage osteoarthritis",
+         dict(cardiac=0, thoracic=0, intracavitary=0, emergent=0)),
+        ("cesarean section", "low transverse", "failure to progress",
+         dict(cardiac=0, thoracic=0, intracavitary=1, emergent=0)),
+        ("cholecystectomy", "laparoscopic", "symptomatic cholelithiasis",
+         dict(cardiac=0, thoracic=0, intracavitary=1, emergent=0)),
+        ("ORIF of femur", "open reduction", "comminuted femur fracture",
+         dict(cardiac=0, thoracic=0, intracavitary=0, emergent=1)),
+        ("carotid endarterectomy", "left", "70% carotid stenosis with TIA history",
+         dict(cardiac=1, thoracic=0, intracavitary=0, emergent=0)),
+        ("total hip arthroplasty", "left", "avascular necrosis",
+         dict(cardiac=0, thoracic=0, intracavitary=0, emergent=0)),
+        ("exploratory thoracotomy", "right", "undiagnosed pleural mass",
+         dict(cardiac=0, thoracic=1, intracavitary=1, emergent=0)),
+        ("partial colectomy", "sigmoid", "diverticulitis with abscess",
+         dict(cardiac=0, thoracic=0, intracavitary=1, emergent=1)),
+        ("unilateral mastectomy", "right", "invasive ductal carcinoma",
+         dict(cardiac=0, thoracic=0, intracavitary=0, emergent=0)),
+        ("craniotomy", "frontal", "resection of suspected glioma",
+         dict(cardiac=0, thoracic=0, intracavitary=0, emergent=0)),
+        ("inguinal hernia repair", "right, open", "reducible inguinal hernia",
+         dict(cardiac=0, thoracic=0, intracavitary=0, emergent=0)),
+        ("abdominal hysterectomy", "total", "symptomatic uterine fibroids",
+         dict(cardiac=0, thoracic=0, intracavitary=1, emergent=0)),
+        ("lumbar spinal fusion", "L4-L5", "spondylolisthesis with radiculopathy",
+         dict(cardiac=0, thoracic=0, intracavitary=0, emergent=0)),
+        ("aortic valve replacement", "bioprosthetic", "severe aortic stenosis",
+         dict(cardiac=1, thoracic=1, intracavitary=1, emergent=0)),
+        ("partial nephrectomy", "left", "renal mass suspicious for RCC",
+         dict(cardiac=0, thoracic=0, intracavitary=1, emergent=0)),
+        ("radical prostatectomy", "robotic", "localized prostate adenocarcinoma",
+         dict(cardiac=0, thoracic=0, intracavitary=1, emergent=0)),
+        ("Roux-en-Y gastric bypass", "laparoscopic", "morbid obesity, BMI 45",
+         dict(cardiac=0, thoracic=0, intracavitary=1, emergent=0)),
+        ("tonsillectomy and adenoidectomy", "pediatric", "recurrent tonsillitis",
+         dict(cardiac=0, thoracic=0, intracavitary=0, emergent=0)),
+    ]
+
+    comorbidities_pool = [
+        "hypertension", "type 2 diabetes mellitus", "hyperlipidemia",
+        "chronic kidney disease stage 3", "COPD", "asthma",
+        "atrial fibrillation", "coronary artery disease", "prior MI",
+        "obstructive sleep apnea", "GERD", "hypothyroidism",
+        "depression", "anxiety", "chronic low back pain",
+        "osteoarthritis", "history of stroke",
+    ]
+
+    medications_pool = [
+        "metoprolol", "lisinopril", "atorvastatin", "aspirin 81 mg",
+        "metformin", "insulin glargine", "levothyroxine", "omeprazole",
+        "albuterol inhaler", "warfarin", "apixaban", "furosemide",
+        "sertraline", "gabapentin", "tramadol PRN", "acetaminophen PRN",
+    ]
+
+    allergies_pool = [
+        "NKDA", "penicillin (rash)", "sulfa (hives)", "latex",
+        "codeine (nausea)", "iodine contrast (mild reaction)",
+    ]
+
+    def _sigmoid(x):
+        return 1.0 / (1.0 + np.exp(-x))
+
+    def synthesize_row(rng):
+        """Build a single synthetic note + its feature-driven outcomes."""
+        proc, detail, indication, flags = procedures[rng.integers(0, len(procedures))]
+        age = int(rng.integers(28, 86))
+        sex = rng.choice(["male", "female"])
+        asa = int(rng.choice([1, 2, 3, 4], p=[0.15, 0.45, 0.3, 0.10]))
+
+        # 1-4 comorbidities; we'll build outcome features off this set.
+        n_comorb = int(rng.integers(1, 5))
+        comorb_list = rng.choice(comorbidities_pool, size=n_comorb, replace=False).tolist()
+        has_diabetes = any("diabetes" in c for c in comorb_list)
+        has_copd = any(c == "COPD" for c in comorb_list)
+
+        # Smoking and obesity are added as separate sentences so they show up as
+        # distinct lexical signals the model can learn (rather than hidden in
+        # comorbidities which gets a long comma-joined list).
+        is_smoker = bool(rng.binomial(1, 0.20))          # 20% current smoker
+        is_obese = bool(rng.binomial(1, 0.30))           # 30% obese
+
+        # 2-5 meds
+        n_meds = int(rng.integers(2, 6))
+        meds = ", ".join(rng.choice(medications_pool, size=n_meds, replace=False))
+        allergies = rng.choice(allergies_pool)
+
+        # ---- outcome logits (signal + small noise) ------------------------------
+        # Outcome_1: high cardiac risk
+        logit1 = -2.5
+        if flags["cardiac"]:
+            logit1 += 2.5
+        if age >= 70:
+            logit1 += 1.0
+        if asa >= 3:
+            logit1 += 1.0
+        if is_smoker:
+            logit1 += 0.7
+        logit1 += rng.normal(0, 0.5)
+
+        # Outcome_2: postoperative delirium
+        logit2 = -2.0
+        if age >= 75:
+            logit2 += 2.0
+        if asa >= 3:
+            logit2 += 1.0
+        if flags["intracavitary"]:
+            logit2 += 0.6
+        logit2 += rng.normal(0, 0.5)
+
+        # Outcome_3: prolonged mechanical ventilation (rare by design)
+        logit3 = -3.0
+        if flags["thoracic"] or flags["cardiac"]:
+            logit3 += 2.0
+        if has_copd:
+            logit3 += 1.5
+        if asa >= 3:
+            logit3 += 0.8
+        if is_obese:
+            logit3 += 0.5
+        logit3 += rng.normal(0, 0.5)
+
+        # Outcome_4: surgical site infection
+        logit4 = -1.5
+        if flags["emergent"]:
+            logit4 += 1.5
+        if has_diabetes:
+            logit4 += 1.0
+        if is_obese:
+            logit4 += 0.8
+        logit4 += rng.normal(0, 0.5)
+
+        outcomes = [
+            int(rng.binomial(1, _sigmoid(lg)))
+            for lg in (logit1, logit2, logit3, logit4)
+        ]
+
+        # ---- compose the note ---------------------------------------------------
+        sentences = [
+            f"{age}-year-old {sex}, ASA {asa}, scheduled for {proc} ({detail}).",
+            f"Indication: {indication}.",
+            f"PMH: {', '.join(comorb_list)}.",
+        ]
+        if is_smoker:
+            sentences.append("Social: current smoker, 1 pack per day.")
+        if is_obese:
+            sentences.append("BMI 34 (obese).")
+        sentences.append(f"Home medications: {meds}.")
+        sentences.append(f"Allergies: {allergies}.")
+        sentences.append("Preop labs within acceptable limits. Consent obtained, plan to proceed.")
+
+        return " ".join(sentences), outcomes
+
+    n = 1000
+    rows = [synthesize_row(rng) for _ in range(n)]
+    texts = [r[0] for r in rows]
+    outcomes = np.array([r[1] for r in rows])
+
+    df_pseudo = pd.DataFrame({
+        "text": texts,
+        "Outcome_1": outcomes[:, 0],  # high cardiac risk
+        "Outcome_2": outcomes[:, 1],  # postoperative delirium
+        "Outcome_3": outcomes[:, 2],  # prolonged ventilation
+        "Outcome_4": outcomes[:, 3],  # surgical site infection
+    })
+    return(df_pseudo)
+ 

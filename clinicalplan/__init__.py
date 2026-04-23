@@ -10,7 +10,7 @@ Public API:
     get_postoperative_outcome_scores(model_name, text, ...)
 """
 
-from .MultiTaskLearningPrediction import mtl_finetune, get_postoperative_outcome_scores
+from .MultiTaskLearningPrediction import mtl_finetune, get_postoperative_outcome_scores, get_psuedo_data
 
 __version__ = "0.1.0"
-__all__ = ["mtl_finetune", "get_postoperative_outcome_scores"]
+__all__ = ["mtl_finetune", "get_postoperative_outcome_scores", "get_psuedo_data"]
