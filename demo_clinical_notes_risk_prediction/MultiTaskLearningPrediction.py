@@ -99,6 +99,7 @@ def mtl_finetune(
     outcome_cols,
     output_dir="mtl_finetuned",
     base_model="emilyalsentzer/Bio_ClinicalBERT",
+    hf_token=None,
     max_length=512,
     lambda_constant=2,
     mlm_probability=0.15,
@@ -153,15 +154,15 @@ def mtl_finetune(
     val_df = val_df.reset_index(drop=True)
 
     # --- model + tokenizer -----------------------------------------------
-    tokenizer = AutoTokenizer.from_pretrained(base_model)
+    tokenizer = AutoTokenizer.from_pretrained(base_model, use_auth_token=hf_token)
     model = CustomBioClinicalBertForCombinedLearning.from_pretrained(
         base_model,
         output_hidden_states=True,
         num_tasks=num_tasks,
         lambda_constant=lambda_constant,
         weights=weights,
+        use_auth_token=hf_token,
     )
-
     # --- stacked multi-task datasets --------------------------------------
     train_dataset = _stack_data(train_df, tokenizer, text_col, outcome_cols, max_length)
     val_dataset = _stack_data(val_df, tokenizer, text_col, outcome_cols, max_length)
@@ -226,6 +227,7 @@ def get_postoperative_outcome_scores(
     outcomes: Optional[List[str]] = None,
     max_length: Optional[int] = None,
     device: Optional[str] = None,
+    hf_token: Optional[str] = None,
 ) -> Union[Dict[str, float], List[Dict[str, float]]]:
     """
     Score a text scenario (or list of scenarios) against each outcome head
@@ -275,9 +277,9 @@ def get_postoperative_outcome_scores(
     # --- load model + tokenizer ------------------------------------------
     load_num_tasks = num_tasks if num_tasks is not None else len(outcomes)
     model = CustomBioClinicalBertForCombinedLearning.from_pretrained(
-        model_name, num_tasks=load_num_tasks
+        model_name, num_tasks=load_num_tasks, use_auth_token=hf_token
     )
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=hf_token)
 
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
