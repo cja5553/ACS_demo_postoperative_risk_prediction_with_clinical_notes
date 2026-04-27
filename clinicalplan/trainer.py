@@ -23,7 +23,15 @@ class CustomTrainer(Trainer):
       `return_dict=False`).
     """
 
-    def compute_loss(self, model, inputs, return_outputs=False):
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        """
+        Compute the joint loss.
+
+        Note: `**kwargs` absorbs any extra keyword arguments that HF's
+        Trainer may pass in newer versions (e.g. `num_items_in_batch`
+        introduced in transformers 4.41). We ignore them because our
+        loss is already pre-aggregated in the model's forward pass.
+        """
         outputs = model(**inputs)
 
         # Dict-like output (return_dict=True, the default in HF)

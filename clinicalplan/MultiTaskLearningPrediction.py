@@ -44,8 +44,8 @@ _DEFAULT_TRAINING_CONFIGS = {
     "logging_steps": 1000,
     "save_strategy": "epoch",
     "seed": 42,
+    "report_to": "none",   # ← add this
 }
-
 
 def _tokenize_and_prepare(batch, tokenizer, text_col, outcome_col, task_id, max_length):
     """Tokenize one batch and attach outcome labels + task ids."""
@@ -155,21 +155,24 @@ def mtl_finetune(
     val_df = val_df.reset_index(drop=True)
 
     # --- model + tokenizer -----------------------------------------------
-    tokenizer = AutoTokenizer.from_pretrained(base_model, use_auth_token=hf_token)
+    tokenizer = AutoTokenizer.from_pretrained(base_model, token=hf_token)
     model = CustomBioClinicalBertForCombinedLearning.from_pretrained(
         base_model,
         output_hidden_states=True,
         num_tasks=num_tasks,
         lambda_constant=lambda_constant,
         weights=weights,
-        use_auth_token=hf_token,
+        token=hf_token,
     )
     # --- stacked multi-task datasets --------------------------------------
     train_dataset = _stack_data(train_df, tokenizer, text_col, outcome_cols, max_length)
     val_dataset = _stack_data(val_df, tokenizer, text_col, outcome_cols, max_length)
-
+    
+    if "evaluation_strategy" in cfg and "eval_strategy" not in cfg:
+        cfg["eval_strategy"] = cfg.pop("evaluation_strategy")
     # --- training ---------------------------------------------------------
     try:
+
         training_args = TrainingArguments(**cfg)
     except TypeError as e:
         raise TypeError(
@@ -186,7 +189,7 @@ def mtl_finetune(
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         data_collator=data_collator,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,   # was tokenizer=tokenizer
     )
     trainer.train()
 
@@ -278,9 +281,9 @@ def get_postoperative_outcome_scores(
     # --- load model + tokenizer ------------------------------------------
     load_num_tasks = num_tasks if num_tasks is not None else len(outcomes)
     model = CustomBioClinicalBertForCombinedLearning.from_pretrained(
-        model_name, num_tasks=load_num_tasks, use_auth_token=hf_token
+        model_name, num_tasks=load_num_tasks, token=hf_token
     )
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=hf_token)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
 
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -320,7 +323,7 @@ def get_postoperative_outcome_scores(
 
 
 
-def get_psuedo_data():
+def get_pseudo_data():
     rng = np.random.default_rng(0)
 
     # ---- building blocks ---------------------------------------------------------

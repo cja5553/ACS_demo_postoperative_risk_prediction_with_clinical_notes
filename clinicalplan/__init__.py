@@ -1,6 +1,6 @@
 """
-demo_clinical_notes_risk_prediction
-===================================
+clinicalplan
+============
 
 Multi-task learning fine-tuning of Bio+ClinicalBERT for predicting
 postoperative outcomes from clinical notes.
@@ -8,9 +8,14 @@ postoperative outcomes from clinical notes.
 Public API:
     mtl_finetune(df, text_col, outcome_cols, ...)
     get_postoperative_outcome_scores(model_name, text, ...)
+    get_pseudo_data()
 """
 
-from .MultiTaskLearningPrediction import mtl_finetune, get_postoperative_outcome_scores, get_psuedo_data
+from .MultiTaskLearningPrediction import (
+    mtl_finetune,
+    get_postoperative_outcome_scores,
+    get_pseudo_data,
+)
 
-__version__ = "0.1.0"
-__all__ = ["mtl_finetune", "get_postoperative_outcome_scores", "get_psuedo_data"]
+__version__ = "0.1.1"
+__all__ = ["mtl_finetune", "get_postoperative_outcome_scores", "get_pseudo_data"]
