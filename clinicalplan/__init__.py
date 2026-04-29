@@ -11,11 +11,11 @@ Public API:
     get_pseudo_data()
 """
 
-from .MultiTaskLearningPrediction import (
+from .MultiTaskFinetuning.MultiTaskLearningPrediction import (
     mtl_finetune,
     get_postoperative_outcome_scores,
     get_pseudo_data,
 )
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __all__ = ["mtl_finetune", "get_postoperative_outcome_scores", "get_pseudo_data"]
