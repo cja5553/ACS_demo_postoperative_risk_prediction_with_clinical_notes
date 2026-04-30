@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: clinicalplan
-Version: 0.1.1
+Version: 0.1.2
 Summary: ClinicalPLAN is a Python package for predicting postoperative risks from clinical notes using language models. It provides training and inference workflows for fine-tuned models, semi-supervised methods, and multi-task prediction of multiple clinical outcomes. The package is intended for clinical research and educational use, notably for the American College of Surgeons.
 Home-page: https://github.com/cja5553/ACS_demo_postoperative_risk_prediction_with_clinical_notes
 Author: Charles Alba

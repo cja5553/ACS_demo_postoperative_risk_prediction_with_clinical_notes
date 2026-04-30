@@ -8,7 +8,6 @@ multi-task workflow but specialized for one outcome at a time.
 from .joint_finetuning import (
     joint_finetune,
     get_outcome_score,
-    get_pseudo_data,
 )
 
-__all__ = ["joint_finetune", "get_outcome_score", "get_pseudo_data"]
+__all__ = ["joint_finetune", "get_outcome_score"]
