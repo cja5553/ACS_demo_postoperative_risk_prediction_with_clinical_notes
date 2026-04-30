@@ -84,7 +84,7 @@ scores = get_postoperative_outcome_scores(
 
 ### Joint or semi-supervised finetuning 
 
-Joint Single-Outcome Finetuning trains a separate model for each postoperative outcome of interest. The jointly learns the structure of your clinical notes whilst learns to predict the outcome, ensuring the model captures both the linguistic patterns of your institution's documentation style and the clinical features that drive your specific outcomes. Unlike the above `MultiTaskLearningPrediction`, this is catered to a single specific outcome as opposed to multiple outcomes. 
+Joint Single-Outcome Finetuning trains a separate model for each postoperative outcome of interest. The jointly learns the structure of your clinical notes whilst learns to predict the outcome, ensuring the model captures both the linguistic patterns of your institution's documentation style and the clinical features that drive your specific outcomes. Unlike the below `MultiTaskLearningPrediction`, this is catered to a single specific outcome as opposed to multiple outcomes. 
 
 ![description of joint JointFinetuning](https://github.com/cja5553/ACS_demo_postoperative_risk_prediction_with_clinical_notes/blob/main/joint_supervision_visualization.jpg)
 

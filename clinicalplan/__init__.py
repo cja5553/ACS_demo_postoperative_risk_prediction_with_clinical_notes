@@ -26,7 +26,7 @@ from .JointFinetuning.joint_finetuning import (
     get_outcome_score,
 )
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __all__ = [
     "mtl_finetune",
     "get_postoperative_outcome_scores",
