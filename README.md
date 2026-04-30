@@ -82,18 +82,109 @@ scores = get_postoperative_outcome_scores(
 
 ## API reference
 
+### Joint or semi-supervised finetuning 
+
+Joint Single-Outcome Finetuning trains a separate model for each postoperative outcome of interest. The jointly learns the structure of your clinical notes whilst learns to predict the outcome, ensuring the model captures both the linguistic patterns of your institution's documentation style and the clinical features that drive your specific outcomes. Unlike the above `MultiTaskLearningPrediction`, this is catered to a single specific outcome as opposed to multiple outcomes. 
+
+![description of joint JointFinetuning](https://github.com/cja5553/ACS_demo_postoperative_risk_prediction_with_clinical_notes/blob/main/joint_supervision_visualization.jpg)
+
+#### `JointFinetuning`
+
+Perform Joint (or semi-supervised) finetuning. 
+
+
+
+**Example**
+
+```python
+joint_finetune(
+    df,
+    text_col="clinical_notes",
+    outcome_col="DVT",
+    output_dir="DVT_model",
+    training_configs={
+        "num_train_epochs": 3,
+        "per_device_train_batch_size": 16,
+        "evaluation_strategy": "steps",
+        "eval_steps": 100,
+        "logging_steps": 100,
+        "learning_rate": 2e-5,
+    },
+)
+```
+
+Fine-tune Bio+ClinicalBERT on MLM jointly with a single binary classification head for one outcome.
+
+**Parameters**
+
+- `df` (`pandas.DataFrame`, *required*): Must contain `text_col` and `outcome_col`.
+- `text_col` (`str`, *required*): Name of the free-text column.
+- `outcome_col` (`str`, *required*): Name of a single binary (0/1) outcome column. Rows with NaN in this column are dropped before training.
+- `output_dir` (`str`, default `"joint_finetuned"`): Directory to save the fine-tuned model, tokenizer, and metadata. Also used as the HuggingFace Trainer `output_dir` for checkpoints and logs.
+- `base_model` (`str`, default `"emilyalsentzer/Bio_ClinicalBERT"`): HuggingFace model id to start from. Any BERT-architecture model should work.
+- `hf_token` (`str | None`, default `None`): Optional HuggingFace token for gated/private base models. If `None`, uses the cached CLI login when present.
+- `max_length` (`int`, default `512`): Token sequence length for tokenization.
+- `lambda_constant` (`float`, default `2`): Weight on the auxiliary (BCE) loss relative to MLM loss. Total loss = MLM + λ · BCE.
+- `mlm_probability` (`float`, default `0.15`): Token masking probability for MLM.
+- `val_fraction` (`float`, default `1/8`): Fraction of `df` held out for validation during training.
+- `weight` (`torch.Tensor | None`, default `None`): Optional `pos_weight` for `BCEWithLogitsLoss` to handle class imbalance. Useful for rare outcomes (e.g., `torch.tensor([20.0])` for ~5% positive prevalence).
+- `training_configs` (`dict | None`, default `None`): Any keyword arguments accepted by `transformers.TrainingArguments`. User-provided values override the defaults below. Default `training_configs` is `{"num_train_epochs": 5, "per_device_train_batch_size": 24, "per_device_eval_batch_size": 24, "learning_rate": 1e-5, "warmup_ratio": 0.06, "weight_decay": 1e-3, "logging_steps": 1000, "save_strategy": "epoch", "seed": 42, "report_to": "none"}`.
+
+**Returns**
+
+`str` — the `output_dir` path. After training, this directory contains:
+
+- `pytorch_model.bin` (or `model.safetensors`) — model weights
+- `config.json` — model architecture config
+- `tokenizer.json`, `vocab.txt`, `tokenizer_config.json`, `special_tokens_map.json` — tokenizer
+- `joint_metadata.json` — records `outcome_col`, `text_col`, `max_length`, `base_model`, `lambda_constant`, `num_tasks` (always 1), and `workflow` so inference can recover them automatically
+- `checkpoint-*` — per-epoch training checkpoints (can be deleted after training)
+- `logs/` — TensorBoard-compatible training logs
+
+---
+
+#### `get_outcome_score`
+
+Score a text scenario (or list of scenarios) against the single auxiliary head of a joint-finetuned model.
+
+**Example**
+
+```python
+get_outcome_score(
+    model_name="DVT_model",
+    text="83-year-old male, ASA 4, scheduled for CABG. PMH: COPD, diabetes.",
+)
+```
+
+**Parameters**
+
+- `model_name` (`str`, *required*): Path to a directory saved by `joint_finetune`.
+- `text` (`str | list[str]`, *required*): One scenario string, or a list of them. Determines the shape of the return value.
+- `max_length` (`int | None`, default: `None`): Token sequence length. Defaults to the value used during fine-tuning, recovered from `joint_metadata.json`, otherwise `512`.
+- `device` (`str | None`, default: `None`): `"cuda"`, `"cpu"`, or `None` to auto-detect.
+- `hf_token` (`str | None`, default: `None`): Optional HuggingFace token for gated/private models.
+
+**Returns**
+
+- `float` when `text` is a string — the predicted probability for the trained outcome, in `[0, 1]`.
+- `list[float]` when `text` is a list — one probability per input, in the same order.
+
+
+---
+
 
 ### Multi-task finetuning  
 
 Multi-Task Learning (MTL) allows you to train a single versatile model capable of predicting multiple postoperative outcomes from the same clinical notes. Unlike traditional finetuning strategies — where you'd need to train a single model for each outcome — MTL allows you to create a model capable of simultaneously predicting multiple risks — analogous to foundation models. 
 
+![description of MTL](https://raw.githubusercontent.com/cja5553/ACS_demo_postoperative_risk_prediction_with_clinical_notes/main/MTL_illustration.jpg)
 
 #### `MultiTaskLearningPrediction`
 
 
 
+Performs MTL finetuning. 
 
-![description of MTL](https://raw.githubusercontent.com/cja5553/ACS_demo_postoperative_risk_prediction_with_clinical_notes/main/MTL_illustration.jpg)
 
 **Example**  
 
@@ -204,89 +295,5 @@ None.
 - `Outcome_1` to `Outcome_4` (`int`, 0/1) — binary outcomes driven by clinical features in the note.
 
 
-### Joint or semi-supervised finetuning 
-
-
-
-#### `JointFinetuning`
-
-Joint Single-Outcome Finetuning trains a separate model for each postoperative outcome of interest. The jointly learns the structure of your clinical notes whilst learns to predict the outcome, ensuring the model captures both the linguistic patterns of your institution's documentation style and the clinical features that drive your specific outcomes. Unlike the above `MultiTaskLearningPrediction`, this is catered to a single specific outcome as opposed to multiple outcomes. 
-
-![description of MTL](https://raw.githubusercontent.com/cja5553/ACS_demo_postoperative_risk_prediction_with_clinical_notes/main/MTL_illustration.jpg)
-
-**Example**
-
-```python
-joint_finetune(
-    df,
-    text_col="clinical_notes",
-    outcome_col="DVT",
-    output_dir="DVT_model",
-    training_configs={
-        "num_train_epochs": 3,
-        "per_device_train_batch_size": 16,
-        "evaluation_strategy": "steps",
-        "eval_steps": 100,
-        "logging_steps": 100,
-        "learning_rate": 2e-5,
-    },
-)
-```
-
-Fine-tune Bio+ClinicalBERT on MLM jointly with a single binary classification head for one outcome.
-
-**Parameters**
-
-- `df` (`pandas.DataFrame`, *required*): Must contain `text_col` and `outcome_col`.
-- `text_col` (`str`, *required*): Name of the free-text column.
-- `outcome_col` (`str`, *required*): Name of a single binary (0/1) outcome column. Rows with NaN in this column are dropped before training.
-- `output_dir` (`str`, default `"joint_finetuned"`): Directory to save the fine-tuned model, tokenizer, and metadata. Also used as the HuggingFace Trainer `output_dir` for checkpoints and logs.
-- `base_model` (`str`, default `"emilyalsentzer/Bio_ClinicalBERT"`): HuggingFace model id to start from. Any BERT-architecture model should work.
-- `hf_token` (`str | None`, default `None`): Optional HuggingFace token for gated/private base models. If `None`, uses the cached CLI login when present.
-- `max_length` (`int`, default `512`): Token sequence length for tokenization.
-- `lambda_constant` (`float`, default `2`): Weight on the auxiliary (BCE) loss relative to MLM loss. Total loss = MLM + λ · BCE.
-- `mlm_probability` (`float`, default `0.15`): Token masking probability for MLM.
-- `val_fraction` (`float`, default `1/8`): Fraction of `df` held out for validation during training.
-- `weight` (`torch.Tensor | None`, default `None`): Optional `pos_weight` for `BCEWithLogitsLoss` to handle class imbalance. Useful for rare outcomes (e.g., `torch.tensor([20.0])` for ~5% positive prevalence).
-- `training_configs` (`dict | None`, default `None`): Any keyword arguments accepted by `transformers.TrainingArguments`. User-provided values override the defaults below. Default `training_configs` is `{"num_train_epochs": 5, "per_device_train_batch_size": 24, "per_device_eval_batch_size": 24, "learning_rate": 1e-5, "warmup_ratio": 0.06, "weight_decay": 1e-3, "logging_steps": 1000, "save_strategy": "epoch", "seed": 42, "report_to": "none"}`.
-
-**Returns**
-
-`str` — the `output_dir` path. After training, this directory contains:
-
-- `pytorch_model.bin` (or `model.safetensors`) — model weights
-- `config.json` — model architecture config
-- `tokenizer.json`, `vocab.txt`, `tokenizer_config.json`, `special_tokens_map.json` — tokenizer
-- `joint_metadata.json` — records `outcome_col`, `text_col`, `max_length`, `base_model`, `lambda_constant`, `num_tasks` (always 1), and `workflow` so inference can recover them automatically
-- `checkpoint-*` — per-epoch training checkpoints (can be deleted after training)
-- `logs/` — TensorBoard-compatible training logs
-
 ---
-
-#### `get_outcome_score`
-
-Score a text scenario (or list of scenarios) against the single auxiliary head of a joint-finetuned model.
-
-**Example**
-
-```python
-get_outcome_score(
-    model_name="DVT_model",
-    text="83-year-old male, ASA 4, scheduled for CABG. PMH: COPD, diabetes.",
-)
-```
-
-**Parameters**
-
-- `model_name` (`str`, *required*): Path to a directory saved by `joint_finetune`.
-- `text` (`str | list[str]`, *required*): One scenario string, or a list of them. Determines the shape of the return value.
-- `max_length` (`int | None`, default: `None`): Token sequence length. Defaults to the value used during fine-tuning, recovered from `joint_metadata.json`, otherwise `512`.
-- `device` (`str | None`, default: `None`): `"cuda"`, `"cpu"`, or `None` to auto-detect.
-- `hf_token` (`str | None`, default: `None`): Optional HuggingFace token for gated/private models.
-
-**Returns**
-
-- `float` when `text` is a string — the predicted probability for the trained outcome, in `[0, 1]`.
-- `list[float]` when `text` is a list — one probability per input, in the same order.
-
 
