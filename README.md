@@ -82,6 +82,55 @@ scores = get_postoperative_outcome_scores(
 
 ## API reference
 
+### Direct inference 
+
+Allows users to use out-of-the-box models that have already been trained on clinical data and its associated post-operative outcomes. Unlike the later ones, this is a direct inference function that loads a pre-trained, ready-to-use model from HuggingFace Hub and therefore requires no model training. 
+
+The default model is `cja5553/BJH-perioperative-notes-bioClinicalBERT`, which is our a Bio+ClinicalBERT model variant that was multi-task fine-tuned across 6 postoperative outcomes: (1) death in 30, (2) DVT, (3) PE, (4) AKI, (5) delirium and (6) Pneumonoia. This model was used in our [accompanying *npj Digital Medicine* paper](https://www.nature.com/articles/s41746-025-01489-2).
+
+#### `direct_inference_from_trained_model`
+
+Score clinical text against a pre-trained multi-task model without any fine-tuning step. The model is downloaded from HuggingFace Hub on first use and cached locally thereafter.
+
+**Example**
+
+```python
+from clinicalplan import direct_inference_from_trained_model
+
+note = (
+    "Redo coronary artery bypass graft with aortic valve replacement "
+    "bioprosthetic. Indication: severe ischemic cardiomyopathy, "
+    "ejection fraction 25 percent, prior MI, ventricular arrhythmia "
+    "status post AICD placement, stage 3 chronic kidney disease, COPD."
+)
+
+scores = direct_inference_from_trained_model(text=note)
+# {'DVT': 0.17, 'PE': 0.06, 'PNA': 0.28, 'postop_del': 0.81,
+#  'death_in_30': 0.46, 'post_aki_status': 0.93}
+```
+
+**Parameters**
+
+- `text` (`str | list[str]`, *required*): One clinical scenario, or a list of them. Determines the shape of the return value.
+- `outcomes` (`list[str] | None`, default: `None`): Which outcomes to score. Defaults to all outcomes the default model was trained on (`DVT`, `PE`, `PNA`, `postop_del`, `death_in_30`, `post_aki_status`), recovered from the model's `mtl_metadata.json`. Pass a subset to score only some.
+- `model_name` (`str`, default: `"cja5553/BJH-perioperative-notes-bioClinicalBERT"`): HuggingFace repo ID or local path. Override to use your own fine-tuned model.
+- `max_length` (`int | None`, default: `None`): Token sequence length. Defaults to the value used during fine-tuning, recovered from metadata.
+- `device` (`str | None`, default: `None`): `"cuda"`, `"cpu"`, or `None` to auto-detect.
+- `hf_token` (`str | None`, default: `None`): Optional HuggingFace token, required only if the model repo is gated/private.
+
+**Returns**
+
+- `dict[str, float]` when `text` is a string — maps each outcome name to a probability in `[0, 1]`.
+- `list[dict[str, float]]` when `text` is a list — one dict per input, in the same order.
+
+**Notes**
+
+- First call downloads the model (~440 MB) from HuggingFace and caches it locally; subsequent calls use the cache.
+- Inference runs on CPU in ~5 seconds per note, or ~0.5 seconds with a GPU.
+- For users who want to fine-tune their own model, see `mtl_finetune` (multi-outcome) or `joint_finetune` (single-outcome).
+
+---
+
 ### Joint or semi-supervised finetuning 
 
 Joint Single-Outcome Finetuning trains a separate model for each postoperative outcome of interest. The jointly learns the structure of your clinical notes whilst learns to predict the outcome, ensuring the model captures both the linguistic patterns of your institution's documentation style and the clinical features that drive your specific outcomes. Unlike the below `MultiTaskLearningPrediction`, this is catered to a single specific outcome as opposed to multiple outcomes. 
