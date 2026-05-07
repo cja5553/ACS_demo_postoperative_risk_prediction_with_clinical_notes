@@ -7,6 +7,8 @@ clinicalplan.egg-info/SOURCES.txt
 clinicalplan.egg-info/dependency_links.txt
 clinicalplan.egg-info/requires.txt
 clinicalplan.egg-info/top_level.txt
+clinicalplan/DirectInference/__init__.py
+clinicalplan/DirectInference/direct_inference.py
 clinicalplan/JointFinetuning/__init__.py
 clinicalplan/JointFinetuning/joint_finetuning.py
 clinicalplan/JointFinetuning/model.py
