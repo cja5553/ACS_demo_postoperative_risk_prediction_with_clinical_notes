@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: clinicalplan
-Version: 0.1.3
+Version: 0.1.4
 Summary: ClinicalPLAN is a Python package for predicting postoperative risks from clinical notes using language models. It provides training and inference workflows for fine-tuned models, semi-supervised methods, and multi-task prediction of multiple clinical outcomes. The package is intended for clinical research and educational use, notably for the American College of Surgeons.
 Home-page: https://github.com/cja5553/ACS_demo_postoperative_risk_prediction_with_clinical_notes
 Author: Charles Alba
@@ -143,7 +143,7 @@ scores = get_postoperative_outcome_scores(
 
 Joint Single-Outcome Finetuning trains a separate model for each postoperative outcome of interest. The jointly learns the structure of your clinical notes whilst learns to predict the outcome, ensuring the model captures both the linguistic patterns of your institution's documentation style and the clinical features that drive your specific outcomes. Unlike the below `MultiTaskLearningPrediction`, this is catered to a single specific outcome as opposed to multiple outcomes. 
 
-![description of joint JointFinetuning](https://github.com/cja5553/ACS_demo_postoperative_risk_prediction_with_clinical_notes/blob/main/joint_supervision_visualization.jpg)
+![description of joint JointFinetuning](https://raw.githubusercontent.com/cja5553/ACS_demo_postoperative_risk_prediction_with_clinical_notes/main/joint_supervision_visualization.jpg)
 
 #### `JointFinetuning`
 

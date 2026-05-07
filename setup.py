@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="clinicalplan",
-    version="0.1.3",
+    version="0.1.4",
     description=(
         "ClinicalPLAN is a Python package for predicting postoperative risks from clinical notes using "
         "language models. It provides training and inference workflows for fine-tuned models, "
