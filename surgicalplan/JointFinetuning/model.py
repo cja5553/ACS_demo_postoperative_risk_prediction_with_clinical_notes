@@ -2,11 +2,11 @@
 Multi-task Bio+ClinicalBERT model.
 
 Note: this file is intentionally a duplicate of
-`clinicalplan/MultiTaskFinetuning/model.py`. The architecture is identical
+`surgicalplan/MultiTaskFinetuning/model.py`. The architecture is identical
 between multi-task and single-outcome (joint) workflows; only the number of
 auxiliary heads (`num_tasks`) differs at instantiation. If you change one,
 remember to keep them in sync. A future refactor could promote this file
-to a shared location (e.g., `clinicalplan/_model.py`).
+to a shared location (e.g., `surgicalplan/_model.py`).
 
 This is a subclass of `transformers.BertForMaskedLM` with a set of per-outcome
 binary classification heads. At training time it jointly optimizes the MLM

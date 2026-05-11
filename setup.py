@@ -4,12 +4,12 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="clinicalplan",
-    version="0.1.6",
+    name="surgicalplan",
+    version="0.1.0",
     description=(
-        "ClinicalPLAN is a Python package for predicting postoperative risks from clinical notes using "
+        "SurgicalPLAN is a Python package for predicting postoperative risks from clinical notes using "
         "language models. It provides training and inference workflows for fine-tuned models, "
-        "semi-supervised methods, and multi-task prediction of multiple clinical outcomes. "
+        "semi-supervised methods, and multi-task prediction of multiple surgical outcomes. "
         "The package is intended for clinical research and educational use, notably for the American College of Surgeons."
     ),
     long_description=long_description,

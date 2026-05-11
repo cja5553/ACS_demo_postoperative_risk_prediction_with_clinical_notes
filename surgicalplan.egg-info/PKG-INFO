@@ -1,7 +1,7 @@
 Metadata-Version: 2.4
-Name: clinicalplan
-Version: 0.1.6
-Summary: ClinicalPLAN is a Python package for predicting postoperative risks from clinical notes using language models. It provides training and inference workflows for fine-tuned models, semi-supervised methods, and multi-task prediction of multiple clinical outcomes. The package is intended for clinical research and educational use, notably for the American College of Surgeons.
+Name: surgicalplan
+Version: 0.1.0
+Summary: SurgicalPLAN is a Python package for predicting postoperative risks from clinical notes using language models. It provides training and inference workflows for fine-tuned models, semi-supervised methods, and multi-task prediction of multiple surgical outcomes. The package is intended for clinical research and educational use, notably for the American College of Surgeons.
 Home-page: https://github.com/cja5553/ACS_demo_postoperative_risk_prediction_with_clinical_notes
 Author: Charles Alba
 Author-email: alba@wustl.edu
@@ -59,11 +59,11 @@ Dynamic: summary
 
 ## Overview
 
-ClinicalPLAN (*Clinical **P**ostoperative Risk Prediction with **L**anguage Models **A**dapting to Clinical **N**otes*) is a Python package for predicting postoperative risks from clinical notes using language models. It provides flexible and clinically oriented workflows that support a range of perioperative use cases, enabling clinicians, researchers, and healthcare institutions to train and fine-tune models using preoperative or intraoperative clinical text.
+SurgicalPLAN (*Surgical **P**ostoperative Risk Prediction with **L**anguage Models **A**dapting to Clinical **N**otes*) is a Python package for predicting postoperative risks from clinical notes using language models. It provides flexible and clinically oriented workflows that support a range of perioperative use cases, enabling clinicians, researchers, and healthcare institutions to train and fine-tune models using preoperative or intraoperative clinical text.
 
 The package is designed to be accessible to a broad range of users, including clinicians, surgeons, and researchers with limited programming experience. It minimizes the need to interact with lower-level machine learning frameworks such as PyTorch. With just a few lines of high-level functions, users can begin training and fine-tuning their own models.
 
-ClinicalPLAN supports multiple modeling strategies, including:
+SurgicalPLAN supports multiple modeling strategies, including:
 
 1. **Direct inference** with fine-tuned language models  
 2. **(Joint) Semi-supervised learning** approaches for leveraging partially labeled data  
@@ -80,14 +80,14 @@ Alba, Xue, Abraham, Kannampallil, and Lu (2025), *npj Digital Medicine*
 ## Installation
 
 ```bash
-pip install clinicalplan
+pip install surgicalplan
 ```
 
 Because `torch` CUDA wheels aren't hosted on PyPI, install PyTorch first matching your GPU's CUDA version, then install this package. For example, on a machine with CUDA 11.8 drivers:
 
 ```bash
 pip install torch==2.1.2 --index-url https://download.pytorch.org/whl/cu118
-pip install clinicalplan
+pip install surgicalplan
 ```
 
 **Python version**: 3.9–3.12 (tested on 3.12).
@@ -152,7 +152,7 @@ Score clinical text against a pre-trained multi-task model without any fine-tuni
 **Example**
 
 ```python
-from clinicalplan import direct_inference_from_trained_model
+from surgicalplan import direct_inference_from_trained_model
 
 note = (
     "Redo coronary artery bypass graft with aortic valve replacement "

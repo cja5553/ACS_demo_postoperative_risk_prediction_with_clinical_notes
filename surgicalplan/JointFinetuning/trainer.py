@@ -2,7 +2,7 @@
 Custom HuggingFace Trainer for joint MLM + auxiliary fine-tuning.
 
 Note: this file is intentionally a duplicate of
-`clinicalplan/MultiTaskFinetuning/trainer.py`. The trainer's only role is to
+`surgicalplan/MultiTaskFinetuning/trainer.py`. The trainer's only role is to
 log the MLM and auxiliary loss components separately, which is
 workflow-agnostic. If you change one, keep them in sync.
 
