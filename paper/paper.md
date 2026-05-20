@@ -179,16 +179,24 @@ provides external, reviewed evidence that the underlying approach is sound. The
 package operationalizes those methods as reusable software so that other groups
 can apply them to their own notes.
 
-The package was initially developed for and presented to surgeons at an American
-College of Surgeons (ACS) workshop on artificial intelligence in surgical care.
-Owing to demand following that workshop, it is being retained for use in future
-conferences and workshops supporting both clinical and educational applications.
-To support adoption and reproducibility without access to protected clinical
-data, the package includes a synthetic-data generator that produces realistic
-example notes with associated outcomes, enabling a complete end-to-end
-fine-tuning and inference demonstration out of the box. Its local execution
-model is intended to lower the barrier to adoption at institutions where
-protected health information cannot be sent to external services.
+The published study has since garnered significant impact, including invited
+conference presentations and hands-on tutorials. The package was therefore
+initially developed for and presented to surgeons at an American College of
+Surgeons (ACS) workshop, *AI for Clinicians and Surgeons: A Hands-On
+Introduction Across the Care Continuum*. It is being retained for use in future
+conferences and workshops in response to demand, supporting both clinical and
+educational applications. This allows it to be presented to clinical audiences
+with limited technical expertise, who can then use the package to develop their
+own models from their own notes without requiring extensive programming or
+machine-learning experience.
+
+
+To support adoption and reproducibility without access
+to protected clinical data, the package includes a synthetic-data generator that
+produces realistic example notes with associated outcomes, enabling a complete
+end-to-end fine-tuning and inference demonstration out of the box. Its local
+execution model is intended to lower the barrier to adoption at institutions
+where protected health information cannot be sent to external services.
 
 # AI usage disclosure
 
