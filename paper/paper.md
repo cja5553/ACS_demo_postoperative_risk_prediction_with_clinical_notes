@@ -1,5 +1,5 @@
 ---
-title: 'SurgicalPLAN: A Python package for predicting postoperative risks from clinical notes using multi-task language models'
+title: 'SurgicalPLAN: A Python package for postoperative risk prediction and training from clinical notes'
 tags:
   - Python
   - clinical natural language processing
@@ -31,9 +31,11 @@ record. `SurgicalPLAN` is a Python package that can be trained from such preoper
 notes to predict a patient's risk of postoperative complications, such as
 30-day mortality, pneumonia, or delirium.
 
-The highlight of the package centers it's multi-task learning (MTL) finetuning abilities: rather than building a
-separate model for each complication, `SurgicalPLAN` fine-tunes a single
-language model once that is capable of predicting multiple risks simulataneously. It is primarily designed for
+The highlight of the package is its multi-task learning (MTL) fine-tuning
+capability: rather than building a separate model for each complication,
+`SurgicalPLAN` fine-tunes a single language model once that can predict multiple
+risks simultaneously. The package also supports inference with already-trained
+models and joint fine-tuning on text and a single outcome together. It is primarily designed for
 clinicians, surgeons, and researchers who are not machine-learning programmers,
 so that training and prediction are carried out through a few high-level
 commands rather than direct use of deep-learning packages and frameworks (e.g., `transformers`). Models run locally
@@ -58,13 +60,18 @@ working predictive models presents three practical obstacles that
 First, predicting several complications at once is operationally difficult. The
 standard workflow adaptively pre-trains a model on clinical notes, tunes it to
 each outcome separately, and then stores and maintains a separate model per
-outcome. Multi-task learning (MTL) — fine-tuning a single model that predicts
-many outcomes simultaneously — is a more efficient and often more robust
-alternative, particularly for rare outcomes, but implementing and deploying an
-MTL fine-tuning pipeline from scratch requires substantial machine-learning
-expertise. `SurgicalPLAN` packages this capability so that multi-task
-fine-tuning becomes accessible in a few lines of code; even for a single
-outcome, it fine-tunes jointly rather than as a separate two-stage process.
+outcome. Clinical notes, however, are often low-resource in nature, such that a separate
+adaptive pre-training stage may offer limited exposure to the textual
+characteristics of a given institution's notes. 
+Multi-task learning (MTL) — fine-tuning a single model that predicts many outcomes 
+simultaneously — is a more efficient and often more robust alternative, 
+particularly for rare outcomes, but implementing and
+deploying an MTL fine-tuning pipeline from scratch requires substantial
+machine-learning expertise. `SurgicalPLAN` packages this capability so that
+multi-task fine-tuning becomes accessible in a few lines of code. Even for a
+single outcome, it fine-tunes jointly on notes and outcome together rather than
+as a separate two-stage process, which is better suited to the low-resource
+nature of clinical text. 
 
 Second, the clinicians who would benefit most — surgeons, anesthesiologists,
 and perioperative trainees — may not be proficient programmers, or technically
