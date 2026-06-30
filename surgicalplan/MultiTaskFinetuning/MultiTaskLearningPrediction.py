@@ -323,7 +323,7 @@ def get_postoperative_outcome_scores(
 
 
 
-def get_pseudo_data():
+def get_pseudo_data(n = 500):
     rng = np.random.default_rng(0)
 
     # ---- building blocks ---------------------------------------------------------
@@ -487,7 +487,7 @@ def get_pseudo_data():
 
         return " ".join(sentences), outcomes
 
-    n = 1000
+
     rows = [synthesize_row(rng) for _ in range(n)]
     texts = [r[0] for r in rows]
     outcomes = np.array([r[1] for r in rows])
