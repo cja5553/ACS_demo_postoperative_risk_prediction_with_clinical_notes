@@ -493,7 +493,7 @@ def get_pseudo_data():
     outcomes = np.array([r[1] for r in rows])
 
     df_pseudo = pd.DataFrame({
-        "text": texts,
+        "clinical_note": texts,
         "Outcome_1": outcomes[:, 0],  # high cardiac risk
         "Outcome_2": outcomes[:, 1],  # postoperative delirium
         "Outcome_3": outcomes[:, 2],  # prolonged ventilation

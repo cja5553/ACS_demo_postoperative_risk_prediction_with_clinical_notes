@@ -44,12 +44,12 @@ import pandas as pd
 from MultiTaskLearningPrediction import mtl_finetune, get_postoperative_outcome_scores
 
 df = pd.read_csv("my_clinical_data.csv")
-# df columns: "text", "Outcome_1", "Outcome_2", "Outcome_3", "Outcome_4"
+# df columns: "clinical_note", "Outcome_1", "Outcome_2", "Outcome_3", "Outcome_4"
 
 # 1. Fine-tune
 mtl_finetune(
     df,
-    text_col="text",
+    text_col="clinical_note",
     outcome_cols=["Outcome_1", "Outcome_2", "Outcome_3", "Outcome_4"],
     output_dir="my_finetuned_model",
 )
@@ -148,7 +148,7 @@ Perform Joint (or semi-supervised) finetuning.
 ```python
 joint_finetune(
     df,
-    text_col="clinical_notes",
+    text_col="clinical_note",
     outcome_col="DVT",
     output_dir="DVT_model",
     training_configs={
@@ -240,7 +240,7 @@ Performs MTL finetuning.
 ```python
 mtl_finetune(
     df,
-    text_col="clincal_notes",
+    text_col="clinical_note",
     outcome_cols=["death_30d", "dvt", "pneumonia", "aki", "AUR", "PE"],
     output_dir="my_run",
     training_configs={
@@ -329,7 +329,7 @@ Generate a small synthetic dataset of preoperative clinical notes with binary ou
 ```python
 df = get_pseudo_data()
 print(df.shape)                  # (1000, 5)
-print(df.columns.tolist())       # ['text', 'Outcome_1', 'Outcome_2', 'Outcome_3', 'Outcome_4']
+print(df.columns.tolist())       # ['clinical_note', 'Outcome_1', 'Outcome_2', 'Outcome_3', 'Outcome_4']
 ```
 
 **Parameters**
@@ -340,7 +340,7 @@ None.
 
 `pandas.DataFrame` with 1000 rows and 5 columns:
 
-- `text` (`str`) — synthetic preoperative note.
+- `clinical_note` (`str`) — synthetic preoperative note.
 - `Outcome_1` to `Outcome_4` (`int`, 0/1) — binary outcomes driven by clinical features in the note.
 
 

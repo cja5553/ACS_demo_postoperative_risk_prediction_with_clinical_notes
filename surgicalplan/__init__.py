@@ -11,7 +11,7 @@ from .DirectInference.direct_inference import (
     direct_inference_from_trained_model,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = [
     "mtl_finetune",
     "get_postoperative_outcome_scores",
