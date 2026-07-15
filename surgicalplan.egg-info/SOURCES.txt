@@ -17,3 +17,5 @@ surgicalplan/MultiTaskFinetuning/MultiTaskLearningPrediction.py
 surgicalplan/MultiTaskFinetuning/__init__.py
 surgicalplan/MultiTaskFinetuning/model.py
 surgicalplan/MultiTaskFinetuning/trainer.py
+surgicalplan/PseudoData/__init__.py
+surgicalplan/PseudoData/curated_data.py

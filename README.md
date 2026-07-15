@@ -41,7 +41,7 @@ pip install surgicalplan
 
 ```python
 import pandas as pd
-from MultiTaskLearningPrediction import mtl_finetune, get_postoperative_outcome_scores
+from surgicalplan import mtl_finetune, get_postoperative_outcome_scores
 
 df = pd.read_csv("my_clinical_data.csv")
 # df columns: "clinical_note", "Outcome_1", "Outcome_2", "Outcome_3", "Outcome_4"
@@ -320,29 +320,39 @@ get_postoperative_outcome_scores(
 
 ---
 
+### Pseudo data
+
 #### `get_pseudo_data`
 
-Generate a small synthetic dataset of preoperative clinical notes with binary outcomes for testing and demonstration. Outcomes are not random — each is driven by realistic feature combinations in the note (procedure type, age, ASA class, comorbidities), so a fine-tuned model is expected to learn meaningful associations.
+Returns a fixed dataset of 500 hand-written preoperative clinical notes with
+hand-assigned binary outcomes, for testing and demonstration. The notes and
+labels are curated rather than generated: each note was written by hand, and
+each label assigned by reading that note. Labels correlate with clinical
+content, and include deliberately discordant cases, so a fine-tuned model
+learns probabilistic rather than deterministic associations.
+
+**Outcome prevalence is deliberately inflated** above real-world incidence
+(true postoperative DVT/pneumonia/AKI run ~1-2%) so that a model has
+recoverable signal at n=500. These are not epidemiological estimates.
 
 **Example**
 
 ```python
 df = get_pseudo_data()
-print(df.shape)                  # (500, 5)
-print(df.columns.tolist())       # ['clinical_note', 'Outcome_1', 'Outcome_2', 'Outcome_3', 'Outcome_4']
+print(df.shape)             # (500, 5)
+print(df.columns.tolist())  # ['clinical_note', 'DVT', 'Pneumonia', 'AKI', 'Delirium']
 ```
 
 **Parameters**
 
-- `n` (`int`, default `500`): Number of synthetic rows to generate. The data is deterministic (fixed seed), so the first `n` rows are the same set every call.
+None.
 
 **Returns**
 
-`pandas.DataFrame` with `n` rows (default 500) and 5 columns:
+`pandas.DataFrame` with 500 rows and 5 columns:
 
-- `clinical_note` (`str`) — synthetic preoperative note.
-- `Outcome_1` to `Outcome_4` (`int`, 0/1) — binary outcomes driven by clinical features in the note.
-
+- `clinical_note` (`str`) — hand-written preoperative note.
+- `DVT`, `Pneumonia`, `AKI`, `Delirium` (`int`, 0/1) — hand-assigned outcomes.
 
 ---
 
