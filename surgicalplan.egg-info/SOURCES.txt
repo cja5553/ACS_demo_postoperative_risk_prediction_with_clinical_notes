@@ -15,6 +15,7 @@ surgicalplan/JointFinetuning/model.py
 surgicalplan/JointFinetuning/trainer.py
 surgicalplan/MultiTaskFinetuning/MultiTaskLearningPrediction.py
 surgicalplan/MultiTaskFinetuning/__init__.py
+surgicalplan/MultiTaskFinetuning/evaluation.py
 surgicalplan/MultiTaskFinetuning/model.py
 surgicalplan/MultiTaskFinetuning/trainer.py
 surgicalplan/PseudoData/__init__.py

@@ -16,7 +16,7 @@ from .PseudoData import (
     get_pseudo_data,
 )
 
-__version__ = "0.1.3"
+__version__ = "0.1.5"
 __all__ = [
     "mtl_finetune",
     "get_postoperative_outcome_scores",

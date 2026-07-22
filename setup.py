@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="surgicalplan",
-    version="0.1.4",
+    version="0.1.5",
     description=(
         "SurgicalPLAN is a Python package for predicting postoperative risks from clinical notes using "
         "language models. It provides training and inference workflows for fine-tuned models, "
@@ -39,11 +39,6 @@ setup(
         "tqdm>=4.66",
     ],
     extras_require={
-        # Optional — only needed for the future K-fold CV / downstream classifier
-        # module. (scikit-learn is now a core dependency, required by evaluate_data.)
-        "classifiers": [
-            "xgboost>=1.7",
-        ],
         # Developer tools
         "dev": [
             "pytest>=7",
