@@ -1,6 +1,11 @@
 """
 Hand-curated preoperative notes with postoperative outcome labels.
 
+Two datasets are provided, both hand-written and hand-labelled by the same
+process: a 500-row TRAINING set (get_pseudo_training_data) and a disjoint
+50-row EVALUATION set (get_pseudo_evaluation_data). No row is shared between
+them, and no note or label is generated, sampled, or templated.
+
 Every note below was written by hand. Every label was assigned by reading that
 specific note and deciding what happened to that specific patient. Nothing here
 is generated, sampled, or templated.
@@ -21,7 +26,7 @@ are NOT epidemiological estimates.
 import pandas as pd
 
 # (note, DVT, Pneumonia, AKI, Delirium)
-_CURATED_ROWS = [
+_TRAINING_ROWS = [
 
     # 1. Hip fracture in a demented octogenarian. The delirium archetype:
     #    baseline cognitive impairment + fracture + unfamiliar environment.
@@ -4576,18 +4581,18 @@ _CURATED_ROWS = [
 
 ]
 
-_EXPECTED_N = 500
-assert len(_CURATED_ROWS) == _EXPECTED_N, (
-    f"Curated dataset is {len(_CURATED_ROWS)} rows, expected {_EXPECTED_N}. "
+_EXPECTED_TRAIN_N = 500
+assert len(_TRAINING_ROWS) == _EXPECTED_TRAIN_N, (
+    f"Curated dataset is {len(_TRAINING_ROWS)} rows, expected {_EXPECTED_TRAIN_N}. "
     "Rows are hand-written; a mismatch means one was lost or duplicated in an edit."
 )
 
 
-def get_pseudo_data():
+def get_pseudo_training_data():
     """
-    Return the hand-curated dataset of preoperative notes and outcomes.
+    Return the hand-curated TRAINING dataset of preoperative notes and outcomes.
 
-    Takes no arguments and always returns all 500 curated rows. There is no
+    Takes no arguments and always returns all 500 curated training rows. There is no
     subsetting parameter: the rows are a designed set, not a sample, and the
     prevalence and discordance structure only holds for the whole thing.
 
@@ -4606,6 +4611,151 @@ def get_pseudo_data():
                 "AKI": aki,
                 "Delirium": delirium,
             }
-            for note, dvt, pna, aki, delirium in _CURATED_ROWS
+            for note, dvt, pna, aki, delirium in _TRAINING_ROWS
+        ]
+    )
+
+
+# ---------------------------------------------------------------------------
+# EVALUATION SET: 50 hand-written rows, disjoint from the training rows above.
+# Same clinical register and same label logic, but deliberately different
+# patients (procedures, comorbidity mixes, and phrasing all vary) so that
+# scoring these tests generalization rather than recall. Hand-labelled the
+# same way: each outcome is a judgement read off the individual note.
+# ---------------------------------------------------------------------------
+_EVALUATION_ROWS = [
+    # 1. Frail demented fracture -> delirium (wrist, not hip; different procedure).
+    ("84F, ASA 4, for open reduction of distal radius fracture. Indication: comminuted intra-articular fracture after fall. PMH: moderate dementia, HTN, prior delirium. Assisted living, needs help with ADLs.", 0, 0, 0, 1),
+    # 2. Fit older fracture, same-day -> nothing. DISCORDANT vs 1.
+    ("69M, ASA 2, for ankle ORIF. Indication: trimalleolar fracture, sporting injury. PMH: well-controlled HTN. Cycles daily, cognitively sharp, day of injury surgery.", 0, 0, 0, 0),
+    # 3. COPD smoker chest surgery -> pneumonia (segmentectomy).
+    ("72M, ASA 4, for right lower lobe segmentectomy. Indication: 2 cm carcinoid tumour. PMH: severe COPD FEV1 43%, current smoker 50 pack-years, chronic productive cough.", 0, 1, 0, 0),
+    # 4. Never-smoker thoracic, epidural -> nothing. DISCORDANT vs 3.
+    ("49F, ASA 2, for thoracoscopic mediastinal cyst excision. Indication: symptomatic bronchogenic cyst. PMH: none. Never smoker, normal spirometry, epidural analgesia.", 0, 0, 0, 0),
+    # 5. Advanced cancer, long abdominal -> DVT (gastric, not ovarian).
+    ("61F, ASA 3, for cytoreductive surgery with HIPEC. Indication: peritoneal carcinomatosis from appendiceal primary. PMH: HTN, BMI 29. Anticipated 8h case.", 1, 0, 0, 0),
+    # 6. Cardiac + CKD -> AKI + delirium (mitral, not CABG/AVR).
+    ("77M, ASA 4, for mitral valve replacement. Indication: severe ischemic mitral regurgitation, EF 35%. PMH: CKD stage 3 Cr 1.9, prior MI, T2DM, HTN.", 0, 0, 1, 1),
+    # 7. Septic + CKD -> AKI + delirium (cholecystectomy source).
+    ("73F, ASA 4E, for emergent open cholecystectomy. Indication: gangrenous cholecystitis with biliary sepsis, hypotensive. PMH: CKD stage 3, T2DM, HTN. Lactate 3.9, on vasopressors.", 0, 0, 1, 1),
+    # 8. Healthy day case -> nothing (floor).
+    ("29M, ASA 1, for laparoscopic appendectomy. Indication: acute appendicitis, overnight symptoms. No PMH. Home same day.", 0, 0, 0, 0),
+    # 9. Elective joint, healthy -> nothing (shoulder, not knee).
+    ("58F, ASA 2, for reverse total shoulder arthroplasty. Indication: rotator cuff arthropathy. PMH: hypothyroidism, HTN. Interscalene block, day case.", 0, 0, 0, 0),
+    # 10. Pancreatic/biliary cancer, cachectic -> DVT (distal panc, not Whipple).
+    ("68M, ASA 3, for distal pancreatectomy and splenectomy. Indication: adenocarcinoma of pancreatic body. PMH: T2DM, 22 lb weight loss, deconditioned. Albumin 2.7.", 1, 0, 0, 0),
+    # 11. Foregut cancer smoker -> pneumonia (gastrectomy, not esophagectomy).
+    ("63M, ASA 3, for total gastrectomy. Indication: proximal gastric adenocarcinoma. PMH: current smoker 30 pack-years, COPD, BMI 25. 15 lb weight loss.", 0, 1, 0, 0),
+    # 12. Dialysis amputation -> DVT, no AKI (AKA, not BKA).
+    ("67M, ASA 4, for left above-knee amputation. Indication: unsalvageable limb ischemia with gangrene. PMH: T2DM, ESRD on hemodialysis, PVD, CHF.", 1, 0, 0, 0),
+    # 13. Elderly cognitively-impaired bypass -> AKI + delirium (off-pump variant).
+    ("81M, ASA 4, for off-pump coronary artery bypass grafting x2. Indication: two-vessel disease with angina. PMH: mild cognitive impairment, HTN, CKD stage 3, prior stroke.", 0, 0, 1, 1),
+    # 14. Ruptured aneurysm -> pneumonia, AKI, delirium (thoracoabdominal).
+    ("74M, ASA 5E, for emergent repair of ruptured thoracoabdominal aneurysm. Indication: free rupture with visceral malperfusion, in extremis. PMH: HTN, COPD, prior stroke. 14 units transfused, prolonged clamp.", 0, 1, 1, 1),
+    # 15. Healthy elective abdominal -> nothing.
+    ("44F, ASA 2, for laparoscopic Nissen fundoplication. Indication: refractory reflux with esophagitis. PMH: GERD, BMI 28. Day surgery.", 0, 0, 0, 0),
+    # 16. Bedbound post-stroke feeding -> pneumonia, DVT, delirium (open, not PEG).
+    ("83M, ASA 3, for open gastrostomy. Indication: dysphagia after brainstem stroke, aspiration events. PMH: prior CVA with quadriparesis, AF, HTN. Bedbound, contracted.", 1, 1, 0, 1),
+    # 17. Elderly fit, minor case -> nothing. DISCORDANT (age alone).
+    ("84M, ASA 3, for excision of facial basal cell carcinoma with flap. Indication: enlarging cheek lesion. PMH: HTN, hyperlipidemia. Independent, drives, local anesthesia.", 0, 0, 0, 0),
+    # 18. Colorectal cancer -> DVT (low anterior resection).
+    ("66F, ASA 3, for laparoscopic low anterior resection. Indication: mid-rectal adenocarcinoma after chemoradiation. PMH: HTN, T2DM, BMI 31.", 1, 0, 0, 0),
+    # 19. Minor endoscopic, healthy older -> nothing.
+    ("74M, ASA 2, for flexible cystoscopy with biopsy. Indication: microscopic hematuria surveillance. PMH: HTN, BPH. Day case, local.", 0, 0, 0, 0),
+    # 20. Lung resection heavy smoker -> pneumonia (bilobectomy).
+    ("66M, ASA 4, for right bilobectomy. Indication: NSCLC crossing the minor fissure. PMH: COPD FEV1 50%, current smoker 40 pack-years, CAD.", 0, 1, 0, 0),
+    # 21. Frail structural heart -> AKI + delirium (mitral clip / valve-in-valve).
+    ("86F, ASA 4, for transcatheter mitral valve repair. Indication: severe MR with heart failure, high surgical risk. PMH: HTN, CKD stage 3b, frailty, prior falls.", 0, 0, 1, 1),
+    # 22. Fit structural heart, normal renal -> nothing. DISCORDANT vs 21.
+    ("77M, ASA 3, for transcatheter aortic valve replacement. Indication: severe AS, favourable anatomy. PMH: HTN, hyperlipidemia. Cr 0.8, independent, minimal contrast.", 0, 0, 0, 0),
+    # 23. Anticoagulated intracranial bleed -> DVT + delirium (evacuation).
+    ("79M, ASA 4E, for emergent evacuation of intracerebral hemorrhage. Indication: expanding lobar hematoma, declining GCS. PMH: AF on apixaban, HTN, T2DM.", 1, 0, 0, 1),
+    # 24. Cirrhosis abdominal -> AKI (hernia with ascites).
+    ("58M, ASA 4, for umbilical hernia repair with mesh. Indication: incarcerated hernia through ascitic wall. PMH: alcoholic cirrhosis Child-Pugh B, ascites, thrombocytopenia.", 0, 0, 1, 0),
+    # 25. Revision arthroplasty, long -> DVT (knee, not hip).
+    ("72F, ASA 3, for revision total knee arthroplasty. Indication: aseptic loosening with instability. PMH: RA on biologics, osteoporosis, HTN, BMI 34.", 1, 0, 0, 0),
+    # 26. Major transplant -> everything (liver, not lung).
+    ("58M, ASA 4, for orthotopic liver transplant. Indication: acute-on-chronic liver failure from NASH cirrhosis, MELD 32. PMH: NASH cirrhosis, grade 2 encephalopathy, type 1 hepatorenal syndrome, varices.", 0, 1, 1, 1),
+    # 27. Young healthy neck -> nothing.
+    ("41F, ASA 2, for hemithyroidectomy. Indication: indeterminate thyroid nodule, Bethesda IV. PMH: none. Euthyroid.", 0, 0, 0, 0),
+    # 28. Elderly demented emergent bowel -> pneumonia, AKI, delirium (obstruction).
+    ("86F, ASA 4E, for emergent laparotomy with adhesiolysis. Indication: closed-loop small bowel obstruction, unstable. PMH: dementia, AF, CHF, CKD stage 4. Care home resident.", 0, 1, 1, 1),
+    # 29. Dialysis access, regional -> nothing (graft revision).
+    ("60F, ASA 4, for thrombectomy and revision of AV graft. Indication: clotted dialysis access. PMH: ESRD on hemodialysis, T2DM, PVD.", 0, 0, 0, 0),
+    # 30. Long urologic cancer case -> DVT + AKI (nephroureterectomy).
+    ("71M, ASA 3, for open nephroureterectomy with bladder cuff. Indication: high-grade upper tract urothelial carcinoma. PMH: former smoker 40 pack-years, CKD stage 2, HTN. 5h case.", 1, 0, 1, 0),
+    # 31. Young trauma, robust -> nothing (liver, not spleen).
+    ("28M, ASA 3E, for emergent laparotomy with hepatorrhaphy. Indication: grade III liver laceration after MVC. No PMH. Three units transfused.", 0, 0, 0, 0),
+    # 32. Complex aortic + arrest -> AKI + delirium (arch).
+    ("60M, ASA 4, for aortic arch replacement. Indication: arch aneurysm 5.8 cm. PMH: HTN, bicuspid valve, prior ascending repair. Circulatory arrest anticipated.", 0, 0, 1, 0),
+    # 33. Elective, healthy, minor -> nothing.
+    ("47M, ASA 2, for laparoscopic inguinal hernia repair. Indication: symptomatic direct hernia. PMH: hyperlipidemia, BMI 27. Day case.", 0, 0, 0, 0),
+    # 34. Long cancer reconstruction -> DVT (free flap head & neck, but no radiotherapy/aspiration).
+    ("54F, ASA 3, for mandibulectomy with free fibula flap. Indication: mandibular osteosarcoma. PMH: BMI 30, HTN. Never smoker. Anticipated 9h case.", 1, 0, 0, 0),
+    # 35. Ischemic bowel on pressors -> AKI + delirium (colectomy).
+    ("75M, ASA 5E, for emergent subtotal colectomy. Indication: ischemic colitis after low-flow state, perforation. PMH: AF, CHF, CKD stage 3. On vasopressors, lactate 5.5.", 0, 0, 1, 1),
+    # 36. Airway cancer smoker -> pneumonia (pharyngolaryngectomy).
+    ("64M, ASA 3, for pharyngolaryngectomy with neck dissection. Indication: hypopharyngeal SCC. PMH: current smoker 45 pack-years, heavy alcohol, COPD, malnutrition.", 0, 1, 0, 0),
+    # 37. Young athlete, regional -> nothing.
+    ("25M, ASA 1, for arthroscopic meniscal repair. Indication: bucket-handle tear with locking. No PMH. Day case.", 0, 0, 0, 0),
+    # 38. Elderly alcohol trauma -> AKI + delirium (different fracture, rhabdo).
+    ("85M, ASA 4, for femoral shaft intramedullary nailing. Indication: pathological-looking midshaft fracture, found after fall. PMH: chronic alcohol use, malnutrition. CK 6800, myoglobinuria.", 0, 0, 1, 1),
+    # 39. Fit cancer resection, normal organ -> nothing. DISCORDANT.
+    ("60M, ASA 3, for partial nephrectomy. Indication: 3 cm enhancing renal mass, exophytic. PMH: HTN, former smoker 15 pack-years. Cr 0.9, short warm ischemia.", 0, 0, 0, 0),
+    # 40. Major cardiac transplant -> everything (LVAD implant).
+    ("55M, ASA 4, for durable LVAD implantation, destination therapy. Indication: NYHA IV cardiomyopathy, EF 14%, inotrope-dependent. PMH: CKD stage 3, T2DM, ICD.", 0, 1, 1, 0),
+    # 41. Robotic pelvic cancer, healthy -> nothing.
+    ("61M, ASA 2, for robotic radical prostatectomy. Indication: localized prostate cancer, Gleason 3+4. PMH: hyperlipidemia. Never smoker.", 0, 0, 0, 0),
+    # 42. Emergent airway, aspiration -> pneumonia.
+    ("57M, ASA 5E, for emergent surgical tracheostomy. Indication: airway obstruction from laryngeal tumour, stridor. PMH: laryngeal cancer, current smoker, prior radiotherapy.", 0, 1, 0, 0),
+    # 43. Elective cancer, fit -> DVT (right hemicolectomy).
+    ("57F, ASA 2, for laparoscopic right hemicolectomy. Indication: cecal adenocarcinoma T3N0. PMH: hypothyroidism, BMI 24. Enhanced recovery.", 1, 0, 0, 0),
+    # 44. Emergent, young, early source control -> nothing.
+    ("53M, ASA 3E, for emergent appendectomy. Indication: acute appendicitis with localized peritonitis. PMH: tobacco use. Presented within 12h.", 0, 0, 0, 0),
+    # 45. Advanced dementia feeding, aspirating -> pneumonia + delirium.
+    ("86F, ASA 4, for open gastrostomy. Indication: advanced dementia with unsafe swallow, weight loss. PMH: advanced dementia, prior aspiration events, contractures. Care home.", 0, 1, 0, 1),
+    # 46. Bariatric, young, ambulates early -> nothing.
+    ("39F, ASA 3, for laparoscopic Roux-en-Y gastric bypass. Indication: class III obesity BMI 50 with T2DM. PMH: OSA on CPAP, T2DM, HTN. Ambulating same evening.", 0, 0, 0, 0),
+    # 47. Extreme frail fracture -> pneumonia, AKI, delirium (shoulder, not hip).
+    ("91F, ASA 4, for shoulder hemiarthroplasty. Indication: four-part proximal humerus fracture after fall. PMH: advanced dementia, CHF, CKD stage 4, prior fractures. Nursing home, hoist transfers.", 0, 1, 1, 1),
+    # 48. Fit spine, healthy -> nothing.
+    ("61M, ASA 2, for L3-L4 microdiscectomy. Indication: herniated disc with radiculopathy. PMH: HTN, BMI 27. Mobilised same day.", 0, 0, 0, 0),
+    # 49. GI cancer, malnourished -> DVT + pneumonia (esophagectomy).
+    ("65M, ASA 3, for transhiatal esophagectomy. Indication: distal esophageal adenocarcinoma after chemoradiation. PMH: 18 lb weight loss, albumin 2.8, former smoker, COPD.", 1, 1, 0, 0),
+    # 50. Healthy young, minor, local -> nothing (quiet floor).
+    ("34M, ASA 1, for excision of soft tissue lipoma, forearm. Indication: enlarging symptomatic lipoma. No PMH. Local anesthesia.", 0, 0, 0, 0),
+]
+
+_EXPECTED_EVAL_N = 50
+assert len(_EVALUATION_ROWS) == _EXPECTED_EVAL_N, (
+    f"Evaluation dataset is {len(_EVALUATION_ROWS)} rows, expected {_EXPECTED_EVAL_N}. "
+    "Rows are hand-written; a mismatch means one was lost or duplicated in an edit."
+)
+
+
+def get_pseudo_evaluation_data():
+    """
+    Return the hand-curated EVALUATION dataset of preoperative notes and outcomes.
+
+    Takes no arguments and always returns all 50 curated evaluation rows. These
+    rows are disjoint from get_pseudo_training_data(): no note or label is shared.
+    Use this set to score a model fine-tuned on the training set.
+
+    Returns
+    -------
+    pandas.DataFrame with columns:
+        clinical_note (str), DVT (int), Pneumonia (int), AKI (int),
+        Delirium (int)
+    """
+    return pd.DataFrame(
+        [
+            {
+                "clinical_note": note,
+                "DVT": dvt,
+                "Pneumonia": pna,
+                "AKI": aki,
+                "Delirium": delirium,
+            }
+            for note, dvt, pna, aki, delirium in _EVALUATION_ROWS
         ]
     )
