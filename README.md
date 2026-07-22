@@ -44,13 +44,13 @@ import pandas as pd
 from surgicalplan import mtl_finetune, get_postoperative_outcome_scores
 
 df = pd.read_csv("my_clinical_data.csv")
-# df columns: "clinical_note", "Outcome_1", "Outcome_2", "Outcome_3", "Outcome_4"
+# df columns: "clinical_note", "DVT", "Pneumonia", "AKI", "Delirium"
 
 # 1. Fine-tune
 mtl_finetune(
     df,
     text_col="clinical_note",
-    outcome_cols=["Outcome_1", "Outcome_2", "Outcome_3", "Outcome_4"],
+    outcome_cols=["DVT", "Pneumonia", "AKI", "Delirium"],
     output_dir="my_finetuned_model",
 )
 
@@ -75,7 +75,7 @@ scores = get_postoperative_outcome_scores(
     "my_finetuned_model",
     note_1
 )
-# {'Outcome_1': 0.12, 'Outcome_2': 0.28, 'Outcome_3': 0.04, 'Outcome_4': 0.39}
+# {'DVT': 0.29, 'Pneumonia': 0.14, 'AKI': 0.07, 'Delirium': 0.06}
 ```
 
 ---
@@ -320,25 +320,52 @@ get_postoperative_outcome_scores(
 
 ---
 
-### Pseudo data
+#### `evaluate_data`
 
-#### `get_pseudo_data`
-
-Returns a fixed dataset of 500 hand-written preoperative clinical notes with
-hand-assigned binary outcomes, for testing and demonstration. The notes and
-labels are curated rather than generated: each note was written by hand, and
-each label assigned by reading that note. Labels correlate with clinical
-content, and include deliberately discordant cases, so a fine-tuned model
-learns probabilistic rather than deterministic associations.
-
-**Outcome prevalence is deliberately inflated** above real-world incidence
-(true postoperative DVT/pneumonia/AKI run ~1-2%) so that a model has
-recoverable signal at n=500. These are not epidemiological estimates.
+Score every note in an evaluation dataframe against each outcome head and report per-outcome metrics: accuracy, precision, recall, F1, AUROC, and AUPRC.
 
 **Example**
 
 ```python
-df = get_pseudo_data()
+from surgicalplan import get_pseudo_evaluation_data, evaluate_data
+
+eval_df = get_pseudo_evaluation_data()
+results = evaluate_data(
+    eval_data=eval_df,
+    outcomes=["DVT", "Pneumonia", "AKI", "Delirium"],
+    model="my_finetuned_model",
+    threshold=0.5,
+)
+print(results)
+```
+
+**Parameters**
+
+- `eval_data` (`pandas.DataFrame`, required): must contain the text column and one 0/1 column per outcome. Use `get_pseudo_evaluation_data()` for the bundled 50-row demo set.
+- `outcomes` (`list[str]`, required): outcome columns to score, e.g. `["DVT", "Pneumonia", "AKI", "Delirium"]`.
+- `model` (`str`, required): path to a directory saved by `mtl_finetune` (the same identifier passed to `get_postoperative_outcome_scores`).
+- `threshold` (`float`, default `0.5`): cutoff for the threshold-dependent metrics (accuracy, precision, recall, F1). Probabilities `>= threshold` count as a positive prediction. AUROC and AUPRC ignore this. When a model's scores cluster low — e.g. after a single training epoch — a lower threshold (such as `0.2`) gives a truer picture of precision and recall than `0.5`.
+- `text_col` (`str`, default `"clinical_note"`): name of the note column in `eval_data`.
+- `max_length` (`int`, default `512`), `device` (`str | None`), `hf_token` (`str | None`): passed through to scoring.
+
+**Returns**
+
+`pandas.DataFrame` with one row per outcome plus a final `macro avg` row, and columns `accuracy`, `precision`, `recall`, `f1`, `auroc`, `auprc`, `support`, `n_pos`. Accuracy, precision, recall and F1 are computed at `threshold`; AUROC and AUPRC are threshold-free. Metrics undefined for the given labels (for example AUROC when only one class is present in `eval_data`) are returned as `NaN`.
+
+---
+
+### Pseudo data
+
+#### `get_pseudo_training_data`
+
+Returns a fixed dataset of 500 hand-written preoperative clinical notes with hand-assigned binary outcomes, for fine-tuning. The notes and labels are curated rather than generated: each note was written by hand, and each label assigned by reading that note. Labels correlate with clinical content, and include deliberately discordant cases, so a fine-tuned model learns probabilistic rather than deterministic associations.
+
+**Outcome prevalence is deliberately inflated** above real-world incidence (true postoperative DVT/pneumonia/AKI run ~1-2%) so that a model has recoverable signal at n=500. These are not epidemiological estimates.
+
+**Example**
+
+```python
+df = get_pseudo_training_data()
 print(df.shape)             # (500, 5)
 print(df.columns.tolist())  # ['clinical_note', 'DVT', 'Pneumonia', 'AKI', 'Delirium']
 ```
@@ -353,6 +380,28 @@ None.
 
 - `clinical_note` (`str`) — hand-written preoperative note.
 - `DVT`, `Pneumonia`, `AKI`, `Delirium` (`int`, 0/1) — hand-assigned outcomes.
+
+`get_pseudo_data` remains available as a backwards-compatible alias for `get_pseudo_training_data`.
+
+#### `get_pseudo_evaluation_data`
+
+Returns a disjoint 50-row dataset in the same format, hand-written and hand-labelled by the same process, for scoring a model fine-tuned on the training set. No note or label is shared with the training data, so metrics reflect generalization rather than recall.
+
+**Example**
+
+```python
+eval_df = get_pseudo_evaluation_data()
+print(eval_df.shape)        # (50, 5)
+print(eval_df.columns.tolist())  # ['clinical_note', 'DVT', 'Pneumonia', 'AKI', 'Delirium']
+```
+
+**Parameters**
+
+None.
+
+**Returns**
+
+`pandas.DataFrame` with 50 rows and the same 5 columns as `get_pseudo_training_data`.
 
 ---
 
